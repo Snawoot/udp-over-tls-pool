@@ -7,7 +7,9 @@ import signal
 from functools import partial
 
 from .asdnotify import AsyncSystemdNotifier
-
+from . import upstream
+from . import client_session
+from . import udp_listener
 from .constants import LogLevel
 from . import utils
 
@@ -30,18 +32,15 @@ def parse_args():
     parser.add_argument("-l", "--logfile",
                         help="log file location",
                         metavar="FILE")
-    parser.add_argument("--disable-uvloop",
-                        help="do not use uvloop even if it is available",
-                        action="store_true")
 
     listen_group = parser.add_argument_group('listen options')
     listen_group.add_argument("-a", "--bind-address",
                               default="127.0.0.1",
-                              help="bind address")
+                              help="UDP bind address")
     listen_group.add_argument("-p", "--bind-port",
                               default=8911,
                               type=utils.check_port,
-                              help="bind port")
+                              help="UDP bind port")
 
     pool_group = parser.add_argument_group('pool options')
     pool_group.add_argument("-n", "--pool-size",
@@ -103,34 +102,46 @@ async def amain(args, loop):  # pragma: no cover
     else:
         context = None
 
+    conn_factory = lambda session, recv_cb: upstream.UpstreamConnection(args.dst_address,
+                                                                        args.dst_port,
+                                                                        context,
+                                                                        session,
+                                                                        recv_cb,
+                                                                        timeout=args.timeout
+                                                                        backoff=args.backoff)
+    session_factory = lambda recv_cb: client_session.ClientSession(conn_factory,
+                                                                   recv_cb,
+                                                                   pool_size=args.pool_size)
+    udp_server = udp_listener.UDPListener(args.bind_address,
+                                          args.bind_port,
+                                          session_factory)
+    async with udp_server:
+        logger.info("UDP server started.")
 
-    # Server setup here
-    logger.info("Server started.")
+        exit_event = asyncio.Event()
+        async with utils.Heartbeat():
+            sig_handler = partial(utils.exit_handler, exit_event)
+            signal.signal(signal.SIGTERM, sig_handler)
+            signal.signal(signal.SIGINT, sig_handler)
+            async with AsyncSystemdNotifier() as notifier:
+                await notifier.notify(b"READY=1")
+                await exit_event.wait()
 
-    exit_event = asyncio.Event()
-    async with utils.Heartbeat():
-        sig_handler = partial(utils.exit_handler, exit_event)
-        signal.signal(signal.SIGTERM, sig_handler)
-        signal.signal(signal.SIGINT, sig_handler)
-        async with AsyncSystemdNotifier() as notifier:
-            await notifier.notify(b"READY=1")
-            await exit_event.wait()
-
-            logger.debug("Eventloop interrupted. Shutting down server...")
-            await notifier.notify(b"STOPPING=1")
-
-    # Server shutdown here
+                logger.debug("Eventloop interrupted. Shutting down server...")
+                await notifier.notify(b"STOPPING=1")
+    logger.info("UDP server stopped.")
 
 
 def main():  # pragma: no cover
     args = parse_args()
     with utils.AsyncLoggingHandler(args.logfile) as log_handler:
         logger = utils.setup_logger('MAIN', args.verbosity, log_handler)
-        utils.setup_logger('Listener', args.verbosity, log_handler)
-        utils.setup_logger('ConnPool', args.verbosity, log_handler)
+        utils.setup_logger('UpstreamConnection', args.verbosity, log_handler)
+        utils.setup_logger('ClientSession', args.verbosity, log_handler)
+        utils.setup_logger('UDPListener', args.verbosity, log_handler)
 
         logger.info("Starting eventloop...")
         loop = asyncio.get_event_loop()
         loop.run_until_complete(amain(args, loop))
         loop.close()
-        logger.info("Server finished its work.")
+        logger.info("Exiting...")
