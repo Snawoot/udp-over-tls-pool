@@ -32,15 +32,17 @@ class UDPListener:
             for k in keys:
                 del self._sessions[k]
                 del self._expirations[k]
-            keys = None
             await asyncio.gather(*(session.stop() for session in sessions))
+            self._logger.debug("Cleared endpoints %s due to inactivity",
+                               repr(keys))
 
     async def start(self):
         self._loop = asyncio.get_event_loop()
-        self._expiration_task = asyncio.ensure_future(self._watch_expirations)
-        self._transport, _ = await loop.create_datagram_endpoint(lambda: self,
-            local_addr=(self._address, self._port))
+        self._expiration_task = asyncio.ensure_future(self._watch_expirations())
+        self._transport, _ = await self._loop.create_datagram_endpoint(
+            lambda: self, local_addr=(self._address, self._port))
         self._started = True
+        self._logger.info("Listener started")
 
     async def stop(self):
         self._started = False
@@ -52,6 +54,7 @@ class UDPListener:
             except asyncio.CancelledError:
                 pass
         await asyncio.gather(*(session.stop() for session in self._sessions.values()))
+        self._logger.info("Listener stopped")
 
     async def __aenter__(self):
         await self.start()
@@ -63,10 +66,14 @@ class UDPListener:
     def connection_made(self, transport):
         pass
 
+    def connection_lost(self, transport):
+        pass
+
     def _send_cb(self, addr, data):
         if self._started:
             self._update_expiration(addr)
             self._transport.sendto(addr, data)
+            self._logger.debug("Sent %s to %s", repr(data), repr(addr))
 
     def _update_expiration(self, addr):
         self._expirations[addr] = self._loop.time() + self._expire
@@ -77,6 +84,7 @@ class UDPListener:
             if addr in self._sessions:
                 session = self._sessions[addr]
             else:
+                self._logger.info("New endpoint: %s", addr)
                 session = self._session_factory(partial(self._send_cb, addr))
                 self._sessions[addr] = session
             session.enqueue(data)

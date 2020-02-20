@@ -146,7 +146,6 @@ class Heartbeat:
         self._beat.cancel()
         while not self._beat.done():
             try:
-                print("Cancelling heartbeat...")
                 await self._beat
             except asyncio.CancelledError:
                 pass
