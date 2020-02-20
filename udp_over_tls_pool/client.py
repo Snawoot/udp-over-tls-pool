@@ -102,13 +102,9 @@ async def amain(args, loop):  # pragma: no cover
     else:
         context = None
 
-    conn_factory = lambda session, recv_cb: upstream.UpstreamConnection(args.dst_address,
-                                                                        args.dst_port,
-                                                                        context,
-                                                                        session,
-                                                                        recv_cb,
-                                                                        timeout=args.timeout
-                                                                        backoff=args.backoff)
+    conn_factory = lambda sess_id, recv_cb, queue: upstream.UpstreamConnection(args.dst_address,
+        args.dst_port, context, sess_id, recv_cb, queue,
+        timeout=args.timeout, backoff=args.backoff)
     session_factory = lambda recv_cb: client_session.ClientSession(conn_factory,
                                                                    recv_cb,
                                                                    pool_size=args.pool_size)

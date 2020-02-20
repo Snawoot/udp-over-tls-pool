@@ -1,10 +1,12 @@
 import asyncio
 import logging
+from functools import partial
 
 class UDPListener:
     _loop = None
     _transport = None
     _expiration_task = None
+    _started = False
 
     def __init__(self, address, port, session_factory, *, expire=120):
         self._address = address
@@ -38,8 +40,10 @@ class UDPListener:
         self._expiration_task = asyncio.ensure_future(self._watch_expirations)
         self._transport, _ = await loop.create_datagram_endpoint(lambda: self,
             local_addr=(self._address, self._port))
+        self._started = True
 
     async def stop(self):
+        self._started = False
         self._transport.close()
         self._expiration_task.cancel()
         while not self._expiration_task.done():
@@ -59,10 +63,20 @@ class UDPListener:
     def connection_made(self, transport):
         pass
 
-    def datagram_received(self, data, addr):
+    def _send_cb(self, addr, data):
+        if self._started:
+            self._update_expiration(addr)
+            self._transport.sendto(addr, data)
+
+    def _update_expiration(self, addr):
         self._expirations[addr] = self._loop.time() + self._expire
-        if addr in self._sessions:
-            session = self._sessions[addr]
-        else:
-            session = self._session_factory()
-            self._sessions[addr] = session
+
+    def datagram_received(self, data, addr):
+        if self._started:
+            self._update_expiration(addr)
+            if addr in self._sessions:
+                session = self._sessions[addr]
+            else:
+                session = self._session_factory(partial(self._send_cb, addr))
+                self._sessions[addr] = session
+            session.enqueue(data)
