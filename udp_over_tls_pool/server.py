@@ -96,9 +96,9 @@ def main():  # pragma: no cover
     args = parse_args()
     with utils.AsyncLoggingHandler(args.logfile) as log_handler:
         logger = utils.setup_logger('MAIN', args.verbosity, log_handler)
-        utils.setup_logger('UpstreamConnection', args.verbosity, log_handler)
-        utils.setup_logger('ClientSession', args.verbosity, log_handler)
-        utils.setup_logger('UDPListener', args.verbosity, log_handler)
+        utils.setup_logger('DgramUpstream', args.verbosity, log_handler)
+        utils.setup_logger('SessionDispatcher', args.verbosity, log_handler)
+        utils.setup_logger('StreamListener', args.verbosity, log_handler)
 
         logger.info("Starting eventloop...")
         loop = asyncio.get_event_loop()

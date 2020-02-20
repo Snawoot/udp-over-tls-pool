@@ -18,3 +18,4 @@ class LogLevel(enum.IntEnum):
 BUFSIZE = 16 * 1024
 LEN_FORMAT = struct.Struct('!H')
 LEN_BYTES = LEN_FORMAT.size
+UUID_BYTES = 16
