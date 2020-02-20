@@ -20,11 +20,12 @@ class UDPListener:
     async def _watch_expirations(self):
         """ Stop idle sessions. This function could use some improvement,
         but it should work anyway. """
+        self._logger.debug("_watch_expirations started")
         while True:
             await asyncio.sleep(1)
             keys = []
             sessions = []
-            for k, exp_time in self._expirations.iteritems():
+            for k, exp_time in self._expirations.items():
                 if exp_time < self._loop.time():
                     keys.append(k)
                     sessions.append(self._sessions[k])
@@ -33,8 +34,9 @@ class UDPListener:
                 del self._sessions[k]
                 del self._expirations[k]
             await asyncio.gather(*(session.stop() for session in sessions))
-            self._logger.debug("Cleared endpoints %s due to inactivity",
-                               repr(keys))
+            if keys:
+                self._logger.debug("Cleared endpoints %s due to inactivity",
+                                   repr(keys))
 
     async def start(self):
         self._loop = asyncio.get_event_loop()
