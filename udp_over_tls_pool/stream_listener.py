@@ -103,7 +103,7 @@ class StreamListener:
                                 await task
                             except asyncio.CancelledError:
                                 pass
-                    self._logger.info("Connection %s for session %s has been "
+                    self._logger.info("Connection 0x%x for session %s has been "
                                       "stopped for a reason: %s",
                                       id(self), sess_id.hex, str(exc))
         except asyncio.CancelledError:

@@ -17,7 +17,7 @@ class UpstreamConnection:
         self._backoff = backoff
         self._logger = logging.getLogger(self.__class__.__name__)
         self._worker_task = asyncio.ensure_future(self._worker())
-        self._logger.debug("Connection %s for session %s started",
+        self._logger.debug("Connection 0x%x for session %s started",
                            id(self), self._sess_id.hex)
 
     async def stop(self):
@@ -27,7 +27,7 @@ class UpstreamConnection:
                 await self._worker_task
             except asyncio.CancelledError:
                 pass
-        self._logger.debug("Connection %s for session %s stopped",
+        self._logger.debug("Connection 0x%x for session %s stopped",
                            id(self), self._sess_id.hex)
 
     async def _downstream(self, reader):
@@ -58,7 +58,7 @@ class UpstreamConnection:
                                                 server_hostname=self._server_name),
                         self._timeout)
                 except asyncio.TimeoutError:
-                    self._logger.warning("Connection %d for session %s: "
+                    self._logger.warning("Connection 0x%x for session %s: "
                                          "timeout",
                                          id(self), self._sess_id.hex)
                     await self._do_backoff()
@@ -88,14 +88,14 @@ class UpstreamConnection:
                                 await task
                             except asyncio.CancelledError:
                                 pass
-                    self._logger.info("Connection %s for session %s has been "
+                    self._logger.info("Connection 0x%x for session %s has been "
                                       "stopped for a reason: %s",
                                       id(self), self._sess_id.hex, str(exc))
                     await self._do_backoff()
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                self._logger.exception("Connection %s for session %s: "
+                self._logger.exception("Connection 0x%x for session %s: "
                                        "unhandled exception %s",
                                        id(self), self._sess_id.hex, str(exc))
                 await self._do_backoff()
