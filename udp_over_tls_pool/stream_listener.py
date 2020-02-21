@@ -1,19 +1,23 @@
 import asyncio
 import logging
 import uuid
+from functools import partial
 
 from .constants import LEN_BYTES, LEN_FORMAT, UUID_BYTES
 
 class StreamListener:
+    _loop = None
+    _server = None
+
     def __init__(self, host, port, dispatcher):
         self._host = host
         self._port = port
         self._dispatcher = dispatcher
         self._children = set()
-        self._server = None
         self._logger = logging.getLogger(self.__class__.__name__)
 
     async def start(self):
+        self._loop = asyncio.get_event_loop()
         def _spawn(reader, writer):
             def task_cb(task, fut):
                 self._children.discard(task)
