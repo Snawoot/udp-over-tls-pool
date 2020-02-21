@@ -8,7 +8,7 @@ class DgramUpstream:
     _started = False
     _done = None
     _queue = None
-    _logger = logging.getLogger(self.__class__.__name__)
+    _logger = logging.getLogger(__name__)
 
     def __init__(self, host, port):
         self._host = host
@@ -47,7 +47,7 @@ class DgramUpstream:
             self._queue.put_nowait(data)
             self._logger.debug("UDP session %s: received data: %s",
                                repr((self._host, self._port)), repr(data))
-        except asyncio.QueueFull
+        except asyncio.QueueFull:
             self._logger.warning("UDP session %s: receive queue full",
                                  repr((self._host, self._port)),
                                  self._session_id.hex)

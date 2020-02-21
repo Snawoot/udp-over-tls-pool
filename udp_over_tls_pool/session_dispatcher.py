@@ -13,7 +13,7 @@ class UpstreamARC:
     _refcount = 0
     _endpoint = None
     _startup = None
-    _logger = logging.getLogger(self.__class__.__name__)
+    _logger = logging.getLogger(__name__)
 
     def __init__(self, upstream_factory, delete_cb):
         self._upstream_factory = upstream_factory
@@ -36,11 +36,11 @@ class UpstreamARC:
             self._refcount += 1
             if self._startup.done():
                 self._logger.debug("ARC 0x%x increment w/o await, refcount = %d",
-                                   id(self), self._refcount))
+                                   id(self), self._refcount)
             else:
                 await self._startup
                 self._logger.debug("ARC 0x%x increment w/ await, refcount = %d",
-                                   id(self), self._refcount))
+                                   id(self), self._refcount)
         elif self._state is ARCState.STOPPED:
             raise RuntimeError("Attempted to borrow from disposed ARC")
         return self._endpoint
@@ -54,7 +54,7 @@ class UpstreamARC:
             self._logger.debug("ARC 0x%x disposed", id(self))
 
 class SessionDispatcher:
-    def __init__(self, upsteam_factory):
+    def __init__(self, upstream_factory):
         self._upstream_factory = upstream_factory
         self._sessions = dict()
         self._logger = logging.getLogger(self.__class__.__name__)

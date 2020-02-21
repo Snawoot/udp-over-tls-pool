@@ -22,8 +22,8 @@ class StreamListener:
             task.add_done_callback(partial(task_cb, task))
 
         self._server = await asyncio.start_server(_spawn,
-                                                  self._listen_address,
-                                                  self._listen_port)
+                                                  self._host,
+                                                  self._port)
         self._logger.info("Server ready.")
 
     async def stop(self):
@@ -55,7 +55,7 @@ class StreamListener:
             try:
                 sessid_bytes = await reader.readexactly(UUID_BYTES)
                 sess_id = uuid.UUID(bytes=sessid_bytes)
-            except asyncio.IncompleteReadError, ConnectionResetError:
+            except (asyncio.IncompleteReadError, ConnectionResetError):
                 self._logger.warning("Connection with %s was reset before "
                                      "session ID was read", peer_addr)
                 return
