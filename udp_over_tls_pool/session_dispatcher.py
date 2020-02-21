@@ -13,11 +13,11 @@ class UpstreamARC:
     _refcount = 0
     _endpoint = None
     _startup = None
-    _logger = logging.getLogger(__name__)
 
     def __init__(self, upstream_factory, delete_cb):
         self._upstream_factory = upstream_factory
         self._delete_cb = delete_cb
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     async def __aenter__(self):
         if self._state is ARCState.CREATED:

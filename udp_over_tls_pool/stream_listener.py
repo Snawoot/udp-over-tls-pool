@@ -8,6 +8,7 @@ from .constants import LEN_BYTES, LEN_FORMAT, UUID_BYTES
 class StreamListener:
     _loop = None
     _server = None
+    _stopping = False
 
     def __init__(self, host, port, dispatcher):
         self._host = host
@@ -19,6 +20,8 @@ class StreamListener:
     async def start(self):
         self._loop = asyncio.get_event_loop()
         def _spawn(reader, writer):
+            if self._stopping:
+                return
             def task_cb(task, fut):
                 self._children.discard(task)
             task = self._loop.create_task(self.handler(reader, writer))
@@ -32,6 +35,7 @@ class StreamListener:
 
     async def stop(self):
         self._server.close()
+        self._stopping = True
         await self._server.wait_closed()
         while self._children:
             children = list(self._children)
@@ -72,3 +76,4 @@ class StreamListener:
                                    str(exc))
         finally:
             writer.close()
+            self._logger.info("Client %s disconnected", str(peer_addr))
