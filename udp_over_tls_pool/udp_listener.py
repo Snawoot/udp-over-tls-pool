@@ -77,7 +77,7 @@ class UDPListener:
     def _send_cb(self, addr, data):
         if self._started:
             self._update_expiration(addr)
-            self._transport.sendto(addr, data)
+            self._transport.sendto(data, addr)
             self._logger.debug("Sent %s to %s", repr(data), repr(addr))
 
     def _update_expiration(self, addr):

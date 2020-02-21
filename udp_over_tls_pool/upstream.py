@@ -32,7 +32,7 @@ class UpstreamConnection:
     async def _downstream(self, reader):
         while True:
             len_bytes = await reader.readexactly(LEN_BYTES)
-            length = LEN_FORMAT.unpack(len_bytes)
+            length = LEN_FORMAT.unpack(len_bytes)[0]
             data = await reader.readexactly(length)
             self._recv_cb(data)
 

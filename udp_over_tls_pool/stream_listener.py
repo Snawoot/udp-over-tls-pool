@@ -56,10 +56,24 @@ class StreamListener:
     async def __aexit__(self, exc_type, exc_value, traceback):
         return await self.stop()
 
+    async def _upstream(self, reader, endpoint):
+        while True:
+            len_bytes = await reader.readexactly(LEN_BYTES)
+            length = LEN_FORMAT.unpack(len_bytes)[0]
+            data = await reader.readexactly(length)
+            endpoint.write(data)
+
+    async def _downstream(self, writer, endpoint):
+        while True:
+            data = await endpoint.read()
+            writer.write(LEN_FORMAT.pack(len(data)) + data)
+            await writer.drain()
+
     async def handler(self, reader, writer):
         peer_addr = writer.transport.get_extra_info('peername')
         self._logger.info("Client %s connected", str(peer_addr))
         try:
+            # Get session ID
             try:
                 sessid_bytes = await reader.readexactly(UUID_BYTES)
                 sess_id = uuid.UUID(bytes=sessid_bytes)
@@ -67,8 +81,29 @@ class StreamListener:
                 self._logger.warning("Connection with %s was reset before "
                                      "session ID was read", peer_addr)
                 return
+
+            writer.transport.set_write_buffer_limits(0)
+
+            # Obtain UDP endpoint and start operation
             async with self._dispatcher.dispatch(sess_id) as endpoint:
-                pass
+                rd_task = asyncio.ensure_future(self._upstream(reader, endpoint))
+                wr_task = asyncio.ensure_future(self._downstream(writer, endpoint))
+                try:
+                    await asyncio.gather(rd_task, wr_task)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    for task in (rd_task, wr_task):
+                        if not task.done():
+                            task.cancel()
+                        while not task.done():
+                            try:
+                                await task
+                            except asyncio.CancelledError:
+                                pass
+                    self._logger.info("Connection %s for session %s has been "
+                                      "stopped for a reason: %s",
+                                      id(self), sess_id.hex, str(exc))
         except asyncio.CancelledError:
             raise
         except Exception as exc:
