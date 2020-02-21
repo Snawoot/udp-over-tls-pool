@@ -51,3 +51,11 @@ class DgramUpstream:
             self._logger.warning("UDP session %s: receive queue full",
                                  repr((self._host, self._port)),
                                  self._session_id.hex)
+
+    def write(self, data):
+        self._transport.sendto(data)
+
+    async def read(self):
+        data = await self._queue.get()
+        self._queue.task_done()
+        return data
