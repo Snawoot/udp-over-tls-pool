@@ -7,6 +7,7 @@ class UDPListener:
     _transport = None
     _expiration_task = None
     _started = False
+    _done = None
 
     def __init__(self, address, port, session_factory, *, expire=120):
         self._address = address
@@ -40,6 +41,7 @@ class UDPListener:
 
     async def start(self):
         self._loop = asyncio.get_event_loop()
+        self._done = self._loop.create_future()
         self._expiration_task = asyncio.ensure_future(self._watch_expirations())
         self._transport, _ = await self._loop.create_datagram_endpoint(
             lambda: self, local_addr=(self._address, self._port))
@@ -56,6 +58,7 @@ class UDPListener:
             except asyncio.CancelledError:
                 pass
         await asyncio.gather(*(session.stop() for session in self._sessions.values()))
+        await self._done
         self._logger.info("Listener stopped")
 
     async def __aenter__(self):
@@ -69,7 +72,7 @@ class UDPListener:
         pass
 
     def connection_lost(self, transport):
-        pass
+        self._done.set_result(True)
 
     def _send_cb(self, addr, data):
         if self._started:
