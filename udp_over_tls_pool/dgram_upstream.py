@@ -8,11 +8,11 @@ class DgramUpstream:
     _started = False
     _done = None
     _queue = None
+    _logger = logging.getLogger(self.__class__.__name__)
 
     def __init__(self, host, port):
         self._host = host
         self._port = port
-        self._logger = logging.getLogger(self.__class__.__name__)
 
     async def start(self):
         self._loop = asyncio.get_event_loop()

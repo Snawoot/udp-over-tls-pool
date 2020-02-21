@@ -98,6 +98,7 @@ def main():  # pragma: no cover
         logger = utils.setup_logger('MAIN', args.verbosity, log_handler)
         utils.setup_logger('DgramUpstream', args.verbosity, log_handler)
         utils.setup_logger('SessionDispatcher', args.verbosity, log_handler)
+        utils.setup_logger('UpstreamARC', args.verbosity, log_handler)
         utils.setup_logger('StreamListener', args.verbosity, log_handler)
 
         logger.info("Starting eventloop...")

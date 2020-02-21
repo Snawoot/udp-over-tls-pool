@@ -59,7 +59,7 @@ class StreamListener:
                 self._logger.warning("Connection with %s was reset before "
                                      "session ID was read", peer_addr)
                 return
-            async with self._dispatcher.get_endpoint(sess_id) as endpoint:
+            async with self._dispatcher.dispatch(sess_id) as endpoint:
                 pass
         except asyncio.CancelledError:
             raise
