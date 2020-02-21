@@ -4,11 +4,12 @@ import logging
 from .constants import LEN_FORMAT, LEN_BYTES
 
 class UpstreamConnection:
-    def __init__(self, host, port, ssl_ctx, sess_id, recv_cb, queue, *,
-                 timeout=4, backoff=5):
+    def __init__(self, host, port, ssl_ctx, server_name, sess_id, recv_cb,
+                 queue, *, timeout=4, backoff=5):
         self._host = host
         self._port = port
         self._ssl_ctx = ssl_ctx
+        self._server_name = server_name
         self._sess_id = sess_id
         self._recv_cb = recv_cb
         self._queue = queue
@@ -53,7 +54,8 @@ class UpstreamConnection:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(self._host, self._port,
-                                                ssl=self._ssl_ctx),
+                                                ssl=self._ssl_ctx,
+                                                server_hostname=self._server_name),
                         self._timeout)
                 except asyncio.TimeoutError:
                     self._logger.warning("Connection %d for session %s: "

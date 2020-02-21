@@ -10,9 +10,10 @@ class StreamListener:
     _server = None
     _stopping = False
 
-    def __init__(self, host, port, dispatcher):
+    def __init__(self, host, port, ssl, dispatcher):
         self._host = host
         self._port = port
+        self._ssl = ssl
         self._dispatcher = dispatcher
         self._children = set()
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -30,7 +31,8 @@ class StreamListener:
 
         self._server = await asyncio.start_server(_spawn,
                                                   self._host,
-                                                  self._port)
+                                                  self._port,
+                                                  ssl=self._ssl)
         self._logger.info("Server ready.")
 
     async def stop(self):

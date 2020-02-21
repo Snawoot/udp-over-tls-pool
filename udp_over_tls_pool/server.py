@@ -74,7 +74,8 @@ async def amain(args, loop):  # pragma: no cover
 
     upstream_factory = lambda: dgram_upstream.DgramUpstream(args.dst_address, args.dst_port)
     dispatcher = session_dispatcher.SessionDispatcher(upstream_factory)
-    listener = stream_listener.StreamListener(args.bind_address, args.bind_port, dispatcher)
+    listener = stream_listener.StreamListener(args.bind_address, args.bind_port,
+                                              context, dispatcher)
     async with listener:
         logger.info("%s server started", "TLS" if args.tls else "TCP")
 

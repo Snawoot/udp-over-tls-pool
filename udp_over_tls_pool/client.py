@@ -84,9 +84,9 @@ def parse_args():
 async def amain(args, loop):  # pragma: no cover
     logger = logging.getLogger('MAIN')
 
+    ssl_hostname = None
     if args.tls:
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        ssl_hostname = None
         if args.cafile:
             context.load_verify_locations(cafile=args.cafile)
         if args.no_hostname_check:
@@ -103,7 +103,7 @@ async def amain(args, loop):  # pragma: no cover
         context = None
 
     conn_factory = lambda sess_id, recv_cb, queue: upstream.UpstreamConnection(args.dst_address,
-        args.dst_port, context, sess_id, recv_cb, queue,
+        args.dst_port, context, ssl_hostname, sess_id, recv_cb, queue,
         timeout=args.timeout, backoff=args.backoff)
     session_factory = lambda recv_cb: client_session.ClientSession(conn_factory,
                                                                    recv_cb,
