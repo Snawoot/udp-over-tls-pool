@@ -21,7 +21,6 @@ class UDPListener:
     async def _watch_expirations(self):
         """ Stop idle sessions. This function could use some improvement,
         but it should work anyway. """
-        self._logger.debug("_watch_expirations started")
         while True:
             await asyncio.sleep(1)
             keys = []
@@ -78,7 +77,6 @@ class UDPListener:
         if self._started:
             self._update_expiration(addr)
             self._transport.sendto(data, addr)
-            self._logger.debug("Sent %s to %s", repr(data), repr(addr))
 
     def _update_expiration(self, addr):
         self._expirations[addr] = self._loop.time() + self._expire

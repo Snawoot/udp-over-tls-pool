@@ -21,8 +21,6 @@ class ClientSession:
     def enqueue(self, data):
         try:
             self._queue.put_nowait(data)
-            self._logger.debug("Session[%s]: enqueued data: %s",
-                               self._session_id.hex, repr(data))
         except asyncio.QueueFull:
             self._logger.warning("Session[%s]: queue full",
                                  self._session_id.hex)

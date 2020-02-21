@@ -45,8 +45,6 @@ class DgramUpstream:
     def datagram_received(self, data, addr):
         try:
             self._queue.put_nowait(data)
-            self._logger.debug("UDP session %s: received data: %s",
-                               repr((self._host, self._port)), repr(data))
         except asyncio.QueueFull:
             self._logger.warning("UDP session %s: receive queue full",
                                  repr((self._host, self._port)),
