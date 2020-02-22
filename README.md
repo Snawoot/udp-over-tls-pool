@@ -89,7 +89,7 @@ Client:
 ```
 $ uotp-client --help
 usage: uotp-client [-h] [-v {debug,info,warn,error,fatal}] [-l FILE]
-                   [-a BIND_ADDRESS] [-p BIND_PORT] [-n POOL_SIZE]
+                   [-a BIND_ADDRESS] [-p BIND_PORT] [-e EXPIRE] [-n POOL_SIZE]
                    [-B BACKOFF] [-w TIMEOUT] [--no-tls] [-c CERT] [-k KEY]
                    [-C CAFILE]
                    [--no-hostname-check | --tls-servername TLS_SERVERNAME]
@@ -113,15 +113,17 @@ listen options:
                         UDP bind address (default: 127.0.0.1)
   -p BIND_PORT, --bind-port BIND_PORT
                         UDP bind port (default: 8911)
+  -e EXPIRE, --expire EXPIRE
+                        UDP session idle timeout in seconds (default: 120.0)
 
 pool options:
   -n POOL_SIZE, --pool-size POOL_SIZE
                         connection pool size (default: 8)
   -B BACKOFF, --backoff BACKOFF
                         delay after connection attempt failure in seconds
-                        (default: 5)
+                        (default: 5.0)
   -w TIMEOUT, --timeout TIMEOUT
-                        server connect timeout (default: 4)
+                        server connect timeout in seconds (default: 4.0)
 
 TLS options:
   --no-tls              do not use TLS (default: True)

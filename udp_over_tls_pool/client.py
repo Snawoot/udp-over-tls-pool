@@ -41,6 +41,10 @@ def parse_args():
                               default=8911,
                               type=utils.check_port,
                               help="UDP bind port")
+    listen_group.add_argument("-e", "--expire",
+                              default=120.,
+                              type=utils.check_positive_float,
+                              help="UDP session idle timeout in seconds")
 
     pool_group = parser.add_argument_group('pool options')
     pool_group.add_argument("-n", "--pool-size",
@@ -48,13 +52,13 @@ def parse_args():
                             type=utils.check_positive_int,
                             help="connection pool size")
     pool_group.add_argument("-B", "--backoff",
-                            default=5,
+                            default=5.,
                             type=utils.check_positive_float,
                             help="delay after connection attempt failure in seconds")
     pool_group.add_argument("-w", "--timeout",
-                            default=4,
+                            default=4.,
                             type=utils.check_positive_float,
-                            help="server connect timeout")
+                            help="server connect timeout in seconds")
 
     tls_group = parser.add_argument_group('TLS options')
     tls_group.add_argument("--no-tls",
@@ -110,7 +114,8 @@ async def amain(args, loop):  # pragma: no cover
                                                                    pool_size=args.pool_size)
     udp_server = udp_listener.UDPListener(args.bind_address,
                                           args.bind_port,
-                                          session_factory)
+                                          session_factory,
+                                          expire=args.expire)
     async with udp_server:
         logger.info("UDP server started.")
 
