@@ -1,11 +1,38 @@
 import asyncio
 import logging
+import socket
 
 from .constants import LEN_FORMAT, LEN_BYTES
 
+async def open_custom_connection(host, port, *, mark=None, **kwds):
+    loop = asyncio.get_event_loop()
+    addr_infos = await loop.getaddrinfo(host, port,
+                                        type=socket.SOCK_STREAM,
+                                        proto=socket.IPPROTO_TCP)
+    my_exc = None
+    for ai in addr_infos:
+        try:
+            fam, typ, proto, cname, addr = ai
+            sock = socket.socket(fam, typ, proto)
+            if mark is not None:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_MARK, mark)
+            sock.setblocking(False)
+            await loop.sock_connect(sock, addr)
+            break
+        except OSError as exc:
+            my_exc = exc
+    else:
+        raise my_exc
+
+    new_kwds = dict(kwds)
+    new_kwds['sock'] = sock
+    if kwds.get('ssl') is not None and kwds.get('server_hostname') is None:
+        new_kwds['server_hostname'] = host
+    return await asyncio.open_connection(**new_kwds)
+
 class UpstreamConnection:
     def __init__(self, host, port, ssl_ctx, server_name, sess_id, recv_cb,
-                 queue, *, timeout=4, backoff=5):
+                 queue, *, timeout=4, backoff=5, mark=None):
         self._host = host
         self._port = port
         self._ssl_ctx = ssl_ctx
@@ -15,6 +42,7 @@ class UpstreamConnection:
         self._queue = queue
         self._timeout = timeout
         self._backoff = backoff
+        self._mark = mark
         self._logger = logging.getLogger(self.__class__.__name__)
         self._worker_task = asyncio.ensure_future(self._worker())
         self._logger.debug("Connection 0x%x for session %s started",
@@ -53,9 +81,10 @@ class UpstreamConnection:
             try:
                 try:
                     reader, writer = await asyncio.wait_for(
-                        asyncio.open_connection(self._host, self._port,
-                                                ssl=self._ssl_ctx,
-                                                server_hostname=self._server_name),
+                        open_custom_connection(self._host, self._port,
+                                               ssl=self._ssl_ctx,
+                                               server_hostname=self._server_name,
+                                               mark=self._mark),
                         self._timeout)
                 except asyncio.TimeoutError:
                     self._logger.warning("Connection 0x%x for session %s: "

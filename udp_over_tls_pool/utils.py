@@ -6,8 +6,6 @@ import ssl
 import os
 import queue
 import socket
-import ctypes
-import time
 
 from . import constants
 
@@ -92,6 +90,19 @@ def check_positive_int(value):
     return fvalue
 
 
+def check_fwmark(value):
+    def fail():
+        raise argparse.ArgumentTypeError(
+            "%s is not a valid value" % value)
+    try:
+        ivalue = int(value, 0)
+    except ValueError:
+        fail()
+    if not (0 <= ivalue < 1<<32):
+        fail()
+    return ivalue
+
+
 def check_loglevel(arg):
     try:
         return constants.LogLevel[arg]
@@ -151,13 +162,13 @@ class Heartbeat:
                 pass
 
 
-async def wall_clock_sleep(duration, precision=.2):
-    async def _wall_clock_sleep():
-        end_time = time.time() + duration
-        while time.time() < end_time:
-            await asyncio.sleep(precision)
+AF_PREFERENCE = {
+    socket.AF_INET: 1,
+    socket.AF_INET6: 2,
+}
 
-    try:
-        await asyncio.wait_for(_wall_clock_sleep(), duration)
-    except asyncio.TimeoutError:
-        pass
+
+def resolve_tcp_endpoint(host, port=None):
+    res = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+    res = sorted(res, key=lambda v: AF_PREFERENCE.get(v[0], 100))
+    return res[0][4][0]
