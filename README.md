@@ -33,7 +33,7 @@ uotp-server -c /etc/letsencrypt/live/example.com/fullchain.pem \
     127.0.0.1 26611
 ```
 
-where 26611 is a Wireguard UDP port. By default server accepts connections on port 8443.
+where 26611 is a target UDP service port. By default server accepts connections on port 8443.
 
 Client example:
 
@@ -44,6 +44,63 @@ uotp-client -a 0.0.0.0 example.com 8443
 where `0.0.0.0` is a listen address (default is localhost only) and `example.com 8443` is uotp-server host address and port. By default client listens UDP port 8911.
 
 See Synopsis for more options.
+
+## Using as a transport for VPN
+
+This application can be used as a transport for UDP-based VPN like Wireguard or OpenVPN.
+
+In case when udp-over-tls-pool server address is covered by routing prefixes tunneled through VPN (for example, if VPN replaces default gateway), udp-over-tls-pool traffic must be excluded. Otherwise connections from uotp-client to uotp-server will be looped back to tunnel. There are at least two ways to resolve that loop.
+
+### Excluding uotp-client traffic with a static route
+
+Classic solution is to define specific route to host with udp-over-tls-pool server. Here is an example Wireguard configuration for Linux:
+
+```
+[Interface]
+Address = 172.21.123.2/32
+PrivateKey = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+PreUp = ip route add 198.51.100.1/32 $(ip route show default | cut -f2- -d\ )
+PostDown = ip route del 198.51.100.1/32
+
+[Peer]
+PublicKey = YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+Endpoint = 127.0.0.1:8911
+AllowedIPs = 0.0.0.0/0
+```
+
+where `198.51.100.1` is an IP address of host with uotp-server.
+
+Such solution should work on all platforms and operating systems, though it leaves all other traffic to uotp-server host unprotected.
+
+### Excluding uotp-client traffic with rule-based routing
+
+Some VPN tunnels use rule-based routing on Linux to exclude own packets from tunnel itself. For example, Wireguard started with `wg-quick` command uses netfilter mark to distinguish tunnel carrier packets. uotp-client is capable to mark own TCP/TLS packets with nfmark as well. To enable this feature you may run uotp-client like this:
+
+```
+uotp-client --resolve-once --mark 0xca6c example.com 8443
+```
+
+where `0xca6c` is default fwmark for Wireguard set by `wg-quick`. You may check this value with `wg show INTERFACE fwmark`. Once this is enabled no additional for Wireguard configuration is required.
+
+Note that to use netfilter marks uotp-client has to be run as superuser or process has to be started with `CAP_NET_ADMIN` capability. You may set this capability for a process running as restricted user with systemd service file like one below:
+
+```
+# /etc/systemd/system/uotp-client.service
+[Unit]
+Description=UDP over TLS pool client
+After=syslog.target network.target
+
+[Service]
+Type=notify
+User=uotp-client
+AmbientCapabilities=CAP_NET_ADMIN
+ExecStart=/usr/local/bin/uotp-client --resolve-once --mark 0xca6c example.com 8443
+Restart=always
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ## Synopsis
 

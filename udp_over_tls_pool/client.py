@@ -32,6 +32,11 @@ def parse_args():
     parser.add_argument("-l", "--logfile",
                         help="log file location",
                         metavar="FILE")
+    parser.add_argument("-R", "--resolve-once",
+                        help="resolve destination address at startup "
+                        "(useful for VPN transport when DNS becomes "
+                        "unavailable directly)",
+                        action="store_true")
 
     listen_group = parser.add_argument_group('listen options')
     listen_group.add_argument("-a", "--bind-address",
@@ -59,6 +64,10 @@ def parse_args():
                             default=4.,
                             type=utils.check_positive_float,
                             help="server connect timeout in seconds")
+    pool_group.add_argument("-m", "--mark",
+                            type=utils.check_fwmark,
+                            help="(Linux only) set nfmark for outbound TCP "
+                            "connections")
 
     tls_group = parser.add_argument_group('TLS options')
     tls_group.add_argument("--no-tls",
@@ -101,14 +110,18 @@ async def amain(args, loop):  # pragma: no cover
             ssl_hostname = ''
         elif args.tls_servername:
             ssl_hostname = args.tls_servername
+        else:
+            ssl_hostname = args.dst_address
         if args.cert:
             context.load_cert_chain(certfile=args.cert, keyfile=args.key)
     else:
         context = None
 
-    conn_factory = lambda sess_id, recv_cb, queue: upstream.UpstreamConnection(args.dst_address,
+    dst_host = (utils.resolve_tcp_endpoint(args.dst_address, args.dst_port)
+                if args.resolve_once else args.dst_address)
+    conn_factory = lambda sess_id, recv_cb, queue: upstream.UpstreamConnection(dst_host,
         args.dst_port, context, ssl_hostname, sess_id, recv_cb, queue,
-        timeout=args.timeout, backoff=args.backoff)
+        timeout=args.timeout, backoff=args.backoff, mark=args.mark)
     session_factory = lambda recv_cb: client_session.ClientSession(conn_factory,
                                                                    recv_cb,
                                                                    pool_size=args.pool_size)
