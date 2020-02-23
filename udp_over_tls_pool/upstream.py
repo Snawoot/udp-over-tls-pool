@@ -68,7 +68,8 @@ class UpstreamConnection:
     async def _upstream(self, writer):
         while True:
             data = await self._queue.get()
-            writer.write(LEN_FORMAT.pack(len(data)) + data)
+            writer.write(LEN_FORMAT.pack(len(data)))
+            writer.write(data)
             await writer.drain()
             self._queue.task_done()
 

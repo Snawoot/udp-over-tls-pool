@@ -68,7 +68,8 @@ class StreamListener:
     async def _downstream(self, writer, endpoint):
         while True:
             data = await endpoint.read()
-            writer.write(LEN_FORMAT.pack(len(data)) + data)
+            writer.write(LEN_FORMAT.pack(len(data)))
+            writer.write(data)
             await writer.drain()
 
     async def handler(self, reader, writer):
