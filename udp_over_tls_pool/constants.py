@@ -1,6 +1,7 @@
 import enum
 import logging
 import struct
+import socket
 
 
 class LogLevel(enum.IntEnum):
@@ -21,3 +22,7 @@ LEN_BYTES = LEN_FORMAT.size
 UUID_BYTES = 16
 MAX_DGRAM_QLEN = 128
 EXPIRE_GRACE = 1.
+try:
+    SO_MARK = socket.SO_MARK
+except:
+    SO_MARK = 36

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import socket
 
-from .constants import LEN_FORMAT, LEN_BYTES
+from .constants import LEN_FORMAT, LEN_BYTES, SO_MARK
 
 async def open_custom_connection(host, port, *, mark=None, **kwds):
     loop = asyncio.get_event_loop()
@@ -15,7 +15,7 @@ async def open_custom_connection(host, port, *, mark=None, **kwds):
             fam, typ, proto, cname, addr = ai
             sock = socket.socket(fam, typ, proto)
             if mark is not None:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_MARK, mark)
+                sock.setsockopt(socket.SOL_SOCKET, SO_MARK, mark)
             sock.setblocking(False)
             await loop.sock_connect(sock, addr)
             break

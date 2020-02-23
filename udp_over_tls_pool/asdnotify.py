@@ -3,6 +3,10 @@ import socket
 import asyncio
 
 MAX_QLEN = 128
+try:
+    MSG_NOSIGNAL = socket.MSG_NOSIGNAL
+except:
+    MSG_NOSIGNAL = 16384
 
 class AsyncSystemdNotifier:
     def __init__(self):
@@ -38,7 +42,7 @@ class AsyncSystemdNotifier:
                 self._loop.remove_writer(self._sock.fileno())
 
     def _send(self, data):
-        return self._sock.sendto(data, socket.MSG_NOSIGNAL, self._addr)
+        return self._sock.sendto(data, MSG_NOSIGNAL, self._addr)
 
     async def start(self):
         if self._addr is None:
