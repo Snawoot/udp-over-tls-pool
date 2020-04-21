@@ -1,0 +1,28 @@
+name: udp-over-tls-pool
+version: '0.1.0'
+summary: Wrapper which transports UDP packets over multiple TLS sessions.
+description: |
+  Network wrapper which transports UDP packets over multiple TLS sessions (or plain TCP connections).
+  
+  Client-side application listens UDP port and for each sending endpoint it establishes multiple connections to server-side application. Server side application maintains UDP endpoint socket for each group of incoming connections and forwards data to destination UDP socket.
+  
+  `udp-over-tls-pool` can be used as a transport for Wireguard or other UDP VPN protocols in cases where plain UDP transit is impossible or undesirable.
+confinement: strict
+base: core18
+
+parts:
+  udp-over-tls-pool:
+    plugin: python
+    python-version: python3
+    source: .
+apps:
+  server:
+    command: bin/uotp-server
+    plugs:
+      - network
+      - network-bind
+  client:
+    command: bin/uotp-client
+    plugs:
+      - network
+      - network-bind
