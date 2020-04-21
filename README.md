@@ -1,6 +1,8 @@
 udp-over-tls-pool
 =================
 
+[![udp-over-tls-pool](https://snapcraft.io//udp-over-tls-pool/badge.svg)](https://snapcraft.io/udp-over-tls-pool)
+
 Network wrapper which transports UDP packets over multiple TLS sessions (or plain TCP connections).
 
 Client-side application listens UDP port and for each sending endpoint it establishes multiple connections to server-side application. Server side application maintains UDP endpoint socket for each group of incoming connections and forwards data to destination UDP socket.
@@ -19,9 +21,21 @@ Client-side application listens UDP port and for each sending endpoint it establ
 
 ## Installation
 
+#### From PyPI
+
 ```
 pip3 install udp-over-tls-pool
 ```
+
+#### From Snap Store
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/udp-over-tls-pool)
+
+```
+sudo snap install udp-over-tls-pool
+```
+
+Note that binaries installed by snap are named `udp-over-tls-pool.server` and `udp-over-tls-pool.client`.
 
 ## Usage
 
