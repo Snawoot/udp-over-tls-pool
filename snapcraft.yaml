@@ -8,7 +8,7 @@ description: |
   
   `udp-over-tls-pool` can be used as a transport for Wireguard or other UDP VPN protocols in cases where plain UDP transit is impossible or undesirable.
 confinement: strict
-base: core20
+base: core18
 
 parts:
   udp-over-tls-pool:
