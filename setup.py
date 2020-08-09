@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()  # pylint: disable=invalid-name
 
 setup(name='udp_over_tls_pool',
-      version='0.1.0',
+      version='0.1.1',
       description='Network wrapper which transports UDP packets over multiple '
                   'TLS sessions',
       url='https://github.com/Snawoot/udp-over-tls-pool',
